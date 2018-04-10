@@ -1,5 +1,5 @@
 # Team 5 (Terrance Taubes, Noura Azeem, Omar Abdeen)
-# CSCI 3907_80 Big Data and Analytics
+# CSCI 6907_80 Big Data and Analytics
 # Class Project 2
 # Due: November 6, 2017
 
