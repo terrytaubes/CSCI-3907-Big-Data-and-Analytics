@@ -1,0 +1,443 @@
+---
+title: "Class Project 3 - Text Analytics"
+author: "Terrance Taubes, Omar Abdeen, Noura Azeem"
+date: "12/8/2017"
+output: html_document
+---
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Project 3 - Text Analytics in R
+By: Terrance Taubes, Noura Azeem, Omar Abdeen
+
+Data set: acq
+- acq has a corpus of 50 documents
+
+Here we load the libraries we need for the project:
+```{r}
+# Libraries
+
+install.packages("qdap")
+
+library(tm) 
+library(qdap)
+library(qdapDictionaries)
+library(dplyr) 
+library(RColorBrewer)
+library(ggplot2) 
+library(scales) 
+library(quanteda) 
+library(textreuse)
+library(wordcloud)
+library(stringr)
+
+# Getting the data
+data(acq)
+
+```
+
+Requirements for the project:
+
+You should do at least the following:
+a. For the complete set of documents, try the functions in lecture 9. What happens? Does it yield anything understandable about the documents.
+
+b. Find the 15 longest documents (in number of words).
+
+c. For each document work through the examples given in Lecture 9 to display the dendrogram and the WordCloud.
+
+For the following you will need to write R functions to help you compute the results.
+Use the packages textreuse, wordnet, zipfR
+
+d. Prior to removing the punctuation, find the longest word and longest sentence in each document from the 15 largest documents.
+
+e. Print a table of the length of each sentence in each of the 15 documents.
+
+f. For each sentence of each document, remove the punctuation. Display the sentences in the 15 largest documents.
+
+g. For each word print its part of speech using the Wordnet package in the 15 largest documents.
+
+h. Analyze word frequency using functions from package zipfR in the 15 largest documents.
+
+
+Part A -- Lecture 9 Functions
+```{r}
+inspect(head(acq))
+head(summary(acq), n = 15)
+
+list.acq <- as.list(acq)
+list.acq
+
+require(openNLP)
+
+# Print Word Counts
+for(i in 1:50){
+   print(wordcount(content(acq[[i]])))
+}
+
+# Document Term Matrix
+doctm <- DocumentTermMatrix(acq)
+doctm
+
+# Term Frequencies for first document
+termFreq(acq[[1]])
+
+# Lowercase
+acqLow <- tm_map(acq, content_transformer(tolower))
+head(acqLow[[1]])
+
+# Remove punctuation and numbers Function
+removeNumPunct <- function(x) gsub("[^[:alpha:][:space:]]*", "", x)
+
+# Remove punctionation and numbers from corpus
+acqCl <- tm_map(acqLow, content_transformer(removeNumPunct))
+head(acqCl[[1]])
+
+# Remove English stop words
+stopWords <- c(stopwords('english'))
+acqStop <- tm_map(acqCl, removeWords, stopWords)
+head(acqStop[[1]])
+
+# Term Document Matrix
+doctm2 <- TermDocumentMatrix(acq, control = list(wordLengths = c(1, Inf)))
+
+# Finding Frequent Words (freq >= 3)
+freq.terms <- findFreqTerms(dm2, lowfreq = 3)
+
+# Finding words associated with "states"
+assoc <- findAssocs(dm2, "states", 0.25)
+
+# Term Frequency
+term.freq <- rowSums(as.matrix(doctm2))
+term.freq <- subset(term.freq, term.freq >= 5)
+term.freqdf <- data.frame(term=names(term.freq), freq=term.freq)
+
+term.freq
+term.freqdf
+```
+
+
+Part B -- Find the 15 longest documents (in number of words)
+```{r}
+inspect(head(acq))
+
+# Document Term Matrix
+dtm <- DocumentTermMatrix(acq)
+
+# Word Count
+wordCounts <- rowSums(as.matrix(dtm))
+
+# 15 Longest Documents
+largestDoc <- names(head(sort(wordCounts, decreasing = T), 15))
+largestDoc
+```
+
+Part C -- Dendrograms and WordClouds
+
+For each document work through the examples given in Lecture 9 to display the dendrogram and the WordCloud.
+
+```{r}
+
+## Dendrograms
+term_dm <- TermDocumentMatrix(acq, control=list(wordLengths=c(1, Inf)))
+term_dm
+tdm_dendrogram <- removeSparseTerms(term_dm, sparse=0.70)
+distanceMat <- dist(scale(tdm_dendrogram))
+head(distanceMat, 20)
+plot(hclust(distanceMat, method = "ward.D2"))
+
+
+## Wordclouds
+m1 <- as.matrix(doctm2)
+word.freq <- sort(rowSums(m1), decreasing = T)
+pal <- brewer.pal(9, "BuGn")
+pal <- pal[-(1:4)]
+wordcloud(words = names(word.freq), freq=word.freq, min.freq = 2, random.order = F, max.words = 50, colors = pal)
+
+```
+
+Part D -- Prior to removing the punctuation, find the longest word and longest sentence in each document from the 15 largest documents.
+
+
+```{r}
+# longest sentence/word for Doc 1
+sents <- tokenize_sentences(acq[[largestDoc[1]]]$content)
+word <- tokenize_words(acq[[largestDoc[1]]]$content)
+# longest word by characters
+word[which.max(nchar(word))]
+# longest sentence by characters
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for Doc 2
+sents <- tokenize_sentences(acq[[largestDoc[2]]]$content)
+word <- tokenize_words(acq[[largestDoc[2]]]$content)
+# longest word by characters
+word[which.max(nchar(word))]
+# longest sentence by characters
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for Doc 3
+sents <- tokenize_sentences(acq[[largestDoc[3]]]$content)
+word <- tokenize_words(acq[[largestDoc[3]]]$content)
+# longest word by characters
+word[which.max(nchar(word))]
+# longest sentence by characters
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for Doc 4
+sents <- tokenize_sentences(acq[[largestDoc[4]]]$content)
+word <- tokenize_words(acq[[largestDoc[4]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+
+# longest sentence/word for Doc 5
+sents <- tokenize_sentences(acq[[largestDoc[5]]]$content)
+word <- tokenize_words(acq[[largestDoc[5]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for Doc 6
+sents <- tokenize_sentences(acq[[largestDoc[6]]]$content)
+word <- tokenize_words(acq[[largestDoc[6]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for Doc 7
+sents <- tokenize_sentences(acq[[largestDoc[7]]]$content)
+word <- tokenize_words(acq[[largestDoc[7]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for Doc 8
+sents <- tokenize_sentences(acq[[largestDoc[8]]]$content)
+word <- tokenize_words(acq[[largestDoc[8]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for 9
+sents <- tokenize_sentences(acq[[largestDoc[9]]]$content)
+word <- tokenize_words(acq[[largestDoc[9]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for 10
+sents <- tokenize_sentences(acq[[largestDoc[10]]]$content)
+word <- tokenize_words(acq[[largestDoc[10]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for 11
+sents <- tokenize_sentences(acq[[largestDoc[11]]]$content)
+word <- tokenize_words(acq[[largestDoc[11]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for 12
+sents <- tokenize_sentences(acq[[largestDoc[12]]]$content)
+word <- tokenize_words(acq[[largestDoc[12]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for 13
+sents <- tokenize_sentences(acq[[largestDoc[13]]]$content)
+word <- tokenize_words(acq[[largestDoc[13]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for 14
+sents <- tokenize_sentences(acq[[largestDoc[14]]]$content)
+word <- tokenize_words(acq[[largestDoc[14]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+# longest sentence/word for 15
+sents <- tokenize_sentences(acq[[largestDoc[15]]]$content)
+word <- tokenize_words(acq[[largestDoc[15]]]$content)
+# longest word by chars
+word[which.max(nchar(word))]
+# longest sentence by chars
+sents[which.max(nchar(sents))]
+
+```
+
+
+Part E -- Print a table of the length of each sentence in each of the 15 documents.
+
+```{r}
+library(formattable)
+
+sent <- tokenize_sentences(acq[[largestDoc[1]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[2]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[3]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[4]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[5]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[6]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[7]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[8]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[9]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[10]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[11]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[12]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[13]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[14]]]$content)
+formattable(sapply(sent, wordcount))
+
+sent <- tokenize_sentences(acq[[largestDoc[15]]]$content)
+formattable(sapply(sent, wordcount))
+```
+
+
+Part F -- For each sentence of each document, remove the punctuation. Display the sentences in the 15 largest documents.
+```{r}
+## Remove Punctuation
+punct_out <- tm_map(acq, removePunctuation)
+
+dfp<-data.frame(text=unlist(sapply(punct_out, `[`, "content")), stringsAsFactors=F)
+
+as.String(dfp$text)
+
+```
+
+Part G - For each word print its part of speech using the Wordnet package in the 15 largest documents.
+
+```{r}
+library(wordnet)
+library(openNLP)
+
+# Corpus to string
+s <-as.String(dfp$text)
+
+#POS Tagger
+pos_tagger <- Maxent_POS_Tag_Annotator(language = "en", probs = F, model = NULL)
+
+# sent/word/pos annotators
+sent_token_annotator <- Maxent_Sent_Token_Annotator ()
+word_token_annotator <- Maxent_Word_Token_Annotator ()
+pos_tag_annotator <- Maxent_POS_Tag_Annotator ()
+
+y <- annotate(s, c(sent_token_annotator, word_token_annotator))
+
+# POS Tags
+tags <- annotate(s, pos_tagger, y)
+head(tags, n = 30)
+```
+
+
+Part H -- Analyze word frequency using functions from package zipfR in the 15 largest documents.
+
+```{r}
+require(zipfR)
+tdm <- TermDocumentMatrix(acq)
+tdm
+temp <- inspect(tdm)
+
+freq <- data.frame(ST = rownames(temp), Freq = rowSums(temp))
+row.names(freq) <- NULL
+freq
+
+# Type frequency list
+head(freq)
+the_tfl <- tfl(freq$Freq, freq$ST)
+
+# Frequency spectrum
+acq.spc <- tfl2spc(the_tfl)
+
+the_tfl
+acq.spc
+
+# Plot frequency spectrum
+plot(acq.spc)
+summary(acq.spc)
+docTM <- as.matrix(DocumentTermMatrix(acq[1]))
+
+my.spc <- spc(docTM, m=1:length(docTM))
+summary(my.spc)
+plot(my.spc)
+
+
+
+```
+
+Part C -- Write an R function to search through the documents to find a specific word or phrase. Print the document number, line number, and word index in the sentence. Demonstrate with three examples. Use words of 6 characters or more as your test cases. 3 points.
+
+```{r}
+data('acq')
+
+find_word <- function(corpus, string) {
+  
+  for(i in seq(1, length(corpus))) {
+    doc <- acq[i]
+    
+    matches <- str_locate_all(doc[[1]]$content, string)
+    
+    if(nrow(matches[[1]]) > 0) {
+      for(j in seq(1, nrow(matches[[1]]))) {
+        idx <- matches[[1]][j, 1]
+        line = str_count(substr(doc[[1]]$content, 1, idx), "\n") + 1
+        
+        print(paste("Document:", i, " Line:", line, " Index:", idx))
+      }
+    }
+  }
+}
+
+find_word(acq, "document")
+find_word(acq, "number")
+find_word(acq, "information")
+
+```
+
+
+
+
+
+
