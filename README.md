@@ -1,4 +1,4 @@
-# CSCI-3907-Big-Data-and-Analytics
+# CSCI-6907-Big-Data-and-Analytics
 Project 2: Mushroom Clustering
 - Data Loading, Cleaning, Preparation
 - Preliminary Statistical Analysis and Plotting
