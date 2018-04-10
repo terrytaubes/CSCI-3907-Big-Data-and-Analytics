@@ -18,3 +18,4 @@ Project 3: Text Analytics
 - Dendrograms
 - WordClouds
 - Wordnet, Part-Of-Speech, openNLP
+- Word Search
